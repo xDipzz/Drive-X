@@ -69,7 +69,7 @@ export function DriveX() {
   };
 
   // Navigate to folder
-  const navigateToFolder = (folderId: string, folderName: string) => {
+  const navigateToFolder = (folderId: string) => {
     setDriveData(prev => ({ ...prev, currentFolderId: folderId }));
     updateCurrentPath(folderId);
   };
@@ -77,7 +77,7 @@ export function DriveX() {
   // Navigate back
   const navigateBack = () => {
     const currentFolder = driveData.files.find(f => f.id === driveData.currentFolderId);
-    const parentId = currentFolder?.parentId || null;
+    const parentId = currentFolder?.parentId ?? null;
     setDriveData(prev => ({ ...prev, currentFolderId: parentId }));
     updateCurrentPath(parentId);
   };
@@ -91,7 +91,7 @@ export function DriveX() {
     
     const buildPath = (id: string): string => {
       const folder = driveData.files.find(f => f.id === id);
-      if (!folder || !folder.parentId) return `/${folder?.name || ""}`;
+      if (!folder?.parentId) return `/${folder?.name ?? ""}`;
       return buildPath(folder.parentId) + `/${folder.name}`;
     };
     
@@ -101,13 +101,13 @@ export function DriveX() {
   // Create new folder
   const createFolder = () => {
     const folderName = prompt("Enter folder name:");
-    if (!folderName || !folderName.trim()) return;
+    if (!folderName?.trim()) return;
 
     const newFolder: FileItem = {
       id: Date.now().toString(),
       name: folderName.trim(),
       type: "folder",
-      parentId: driveData.currentFolderId || undefined,
+      parentId: driveData.currentFolderId ?? undefined,
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString(),
     };
@@ -141,7 +141,7 @@ export function DriveX() {
         size: file.size,
         mimeType: file.type,
         content: content,
-        parentId: driveData.currentFolderId || undefined,
+        parentId: driveData.currentFolderId ?? undefined,
         createdAt: new Date().toISOString(),
         modifiedAt: new Date().toISOString(),
       };
@@ -163,7 +163,7 @@ export function DriveX() {
     setDragOver(false);
     
     const files = event.dataTransfer.files;
-    if (files && files.length > 0 && files[0]) {
+    if (files?.[0]) {
       handleFileUpload(files[0]);
     }
   };
@@ -171,7 +171,7 @@ export function DriveX() {
   // Handle file select
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0 && files[0]) {
+    if (files?.[0]) {
       handleFileUpload(files[0]);
     }
   };
@@ -278,15 +278,15 @@ export function DriveX() {
     if (file.type === "folder") return "📁";
     
     const ext = file.name.split('.').pop()?.toLowerCase();
-    const mimeType = file.mimeType || "";
+    const mimeType = file.mimeType ?? "";
     
     if (mimeType.startsWith("image/")) return "🖼️";
     if (mimeType.startsWith("video/")) return "🎥";
     if (mimeType.startsWith("audio/")) return "🎵";
     if (mimeType.includes("pdf")) return "📄";
-    if (mimeType.startsWith("text/") || ["txt", "md", "json"].includes(ext || "")) return "📝";
-    if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) return "📦";
-    if (["js", "ts", "jsx", "tsx", "html", "css", "py", "java"].includes(ext || "")) return "💻";
+    if (mimeType.startsWith("text/") || ["txt", "md", "json"].includes(ext ?? "")) return "📝";
+    if (["zip", "rar", "7z", "tar", "gz"].includes(ext ?? "")) return "📦";
+    if (["js", "ts", "jsx", "tsx", "html", "css", "py", "java"].includes(ext ?? "")) return "💻";
     return "📄";
   };
 
@@ -295,7 +295,7 @@ export function DriveX() {
   const totalFolders = driveData.files.filter(f => f.type === "folder").length;
   const totalSize = driveData.files
     .filter(f => f.type === "file" && f.size)
-    .reduce((sum, f) => sum + (f.size || 0), 0);
+    .reduce((sum, f) => sum + (f.size ?? 0), 0);
 
   if (loading) {
     return (
@@ -453,7 +453,7 @@ export function DriveX() {
                   >
                     <div 
                       className="flex items-center space-x-3 flex-1 cursor-pointer"
-                      onClick={() => item.type === "folder" ? navigateToFolder(item.id, item.name) : undefined}
+                      onClick={() => item.type === "folder" ? navigateToFolder(item.id) : undefined}
                     >
                       <span className="text-2xl">{getFileIcon(item)}</span>
                       <div className="flex-1">
