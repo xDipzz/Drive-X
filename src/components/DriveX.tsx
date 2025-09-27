@@ -53,7 +53,10 @@ export function DriveX() {
 
   // Get current folder items
   const getCurrentItems = () => {
-    return driveData.files.filter(item => item.parentId === driveData.currentFolderId);
+    return driveData.files.filter(item => 
+      (driveData.currentFolderId === null && item.parentId === undefined) ||
+      item.parentId === driveData.currentFolderId
+    );
   };
 
   // Get filtered items based on search
@@ -104,7 +107,7 @@ export function DriveX() {
       id: Date.now().toString(),
       name: folderName.trim(),
       type: "folder",
-      parentId: driveData.currentFolderId,
+      parentId: driveData.currentFolderId || undefined,
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString(),
     };
@@ -138,7 +141,7 @@ export function DriveX() {
         size: file.size,
         mimeType: file.type,
         content: content,
-        parentId: driveData.currentFolderId,
+        parentId: driveData.currentFolderId || undefined,
         createdAt: new Date().toISOString(),
         modifiedAt: new Date().toISOString(),
       };
@@ -160,7 +163,7 @@ export function DriveX() {
     setDragOver(false);
     
     const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
       handleFileUpload(files[0]);
     }
   };
@@ -168,7 +171,7 @@ export function DriveX() {
   // Handle file select
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
       handleFileUpload(files[0]);
     }
   };
@@ -193,20 +196,21 @@ export function DriveX() {
     if (!confirm("Are you sure you want to delete this item?")) return;
 
     // If deleting a folder, also delete all its contents
-    const deleteRecursive = (itemId: string) => {
+    const deleteRecursive = (itemId: string): string[] => {
       const children = driveData.files.filter(f => f.parentId === itemId);
-      children.forEach(child => deleteRecursive(child.id));
-      return itemId;
+      const childIds: string[] = [];
+      children.forEach(child => {
+        childIds.push(child.id);
+        childIds.push(...deleteRecursive(child.id));
+      });
+      return childIds;
     };
 
     const item = driveData.files.find(f => f.id === id);
     const idsToDelete = [id];
     
     if (item?.type === "folder") {
-      const childIds = driveData.files
-        .filter(f => f.parentId === id)
-        .map(f => deleteRecursive(f.id));
-      idsToDelete.push(...childIds);
+      idsToDelete.push(...deleteRecursive(id));
     }
 
     setDriveData(prev => ({
